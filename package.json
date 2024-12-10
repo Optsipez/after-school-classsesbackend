@@ -1,0 +1,15 @@
+{
+  "name": "afterschoolclassesbackend",
+  "version": "1.0.0",
+  "description": "Backend for Vue.js app",
+  "main": "server1.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "vishesh",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.21.2",
+    "mongodb": "^3.6.3"
+  }
+}
