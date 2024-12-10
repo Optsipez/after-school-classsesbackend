@@ -4,6 +4,7 @@
   "description": "Backend for Vue.js app",
   "main": "server1.js",
   "scripts": {
+    "start": "node server1.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "vishesh",
