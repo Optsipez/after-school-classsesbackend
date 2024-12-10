@@ -118,7 +118,7 @@ app.get('/search/:collectionName', (req, res, next) => {
 
     const query = {
         $or: [ // Match any of the fields
-            { title: searchRegex },
+            { name: searchRegex },
             { location: searchRegex },
             { price: { $regex: searchRegex } }, // Match price as a string
             { availableSeats: { $regex: searchRegex } }, // Match availability as a string
