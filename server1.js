@@ -103,7 +103,7 @@ app.post('/collection/:collectionName', (req, res, next) => {
 });
 
 // return with object id
-const ObjectID = require('mongodb').ObjectID;
+// const ObjectID = require('mongodb').ObjectID;
 app.get('/collection/:collectionName/:id', (req, res, next) => {
     req.collection.findOne({ _id: ObjectID(req.params.id) }, (e, result) => {
         if (e) return next(e)
@@ -123,6 +123,28 @@ app.put('/collection/:collectionName/:id', (req, res, next) => {
         }
     );
 });
+
+
+app.get('/search/:collectionName', (request, response, next) => {
+    const searchTerm = request.query.q || ""; // Get the search term
+    const searchRegex = new RegExp(searchTerm, "i"); // Case-insensitive regex for substring matching
+
+    const query = {
+        $or: [
+            { title: searchRegex },
+            { location: searchRegex },
+        ]
+    }
+    request.collection.find(query).toArray((err, results) => {
+        if (err) return next(err); // Handle errors
+        response.send(results);    // Send the filtered results
+    });
+})
+
+
+
+
+
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
