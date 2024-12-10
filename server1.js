@@ -1,147 +1,131 @@
-const express = require('express');
-const app = express();
-const path = require("path");
-const { MongoClient, ObjectID } = require('mongodb');
+// Import required modules
+const express = require('express'); // Framework for building web applications
+const app = express(); // Create an instance of an Express application
+const path = require("path"); // Module to handle and transform file paths
+const { MongoClient, ObjectID } = require('mongodb'); // MongoDB client and ObjectID for working with the database
 
-// Logger Middleware
+// Logger Middleware: Logs incoming requests and their response status
 function logger(req, res, next) {
-    const method = req.method;
-    const url = req.url;
-    const timestamp = new Date();
+    const method = req.method; // HTTP method (e.g., GET, POST)
+    const url = req.url; // Requested URL
+    const timestamp = new Date(); // Timestamp of the request
 
     console.log(`[${timestamp}] ${method} request to ${url}`);
 
+    // Log response status after the request is completed
     res.on('finish', () => {
         console.log(`[${timestamp}] Response status: ${res.statusCode}`);
     });
 
-    next();
+    next(); // Pass control to the next middleware
 }
 
-// Use the logger middleware
+// Use the logger middleware globally
 app.use(logger);
 
-// Serve static assets
-// app.use('/assets', express.static(path.resolve(__dirname, "assets")));
-
-
-app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
-    res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
-});
-
-
-
-
-var imagePath = path.resolve(__dirname, "assets");
+// Serve static assets (e.g., images, CSS, JavaScript) from the "assets" directory
+const imagePath = path.resolve(__dirname, "assets"); // Resolve the path to the "assets" directory
 app.use('/assets', express.static(imagePath));
 
-app.use("/assets", express.static(imagePath));
+// Middleware to handle Cross-Origin Resource Sharing (CORS)
+// Allows requests from different origins for the APIs
+app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Allow requests from any origin
+    res.setHeader("Access-Control-Allow-Credentials", "true"); // Allow cookies or authentication headers
+    res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT"); // Allowed HTTP methods
+    res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept"); // Allowed headers
+    next(); // Pass control to the next middleware
+});
 
-
-
-
-
-
-// Middleware to handle missing image static files
+// Handle missing static files by returning a 404 response
 app.get("/assets/:image", (req, res) => {
     res.status(404).send("Static file not found");
 });
 
-// Config Express.js
+// Configure Express to parse JSON request bodies
 app.use(express.json());
-app.set('port', 3000);
-app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    next();
-});
 
-// Connect to MongoDB
-let db;
+// Set the port for the application
+app.set('port', 3000);
+
+// Connect to MongoDB database
+let db; // Database instance
 MongoClient.connect(
     'mongodb+srv://vishesh:vishesh27@afs.4jxdc.mongodb.net/',
-    { useNewUrlParser: true, useUnifiedTopology: true },
+    { useNewUrlParser: true, useUnifiedTopology: true }, // Connection options
     (err, client) => {
         if (err) {
             console.error("Error connecting to MongoDB:", err);
             return;
         }
-        db = client.db('webstore');
+        db = client.db('webstore'); // Connect to the "webstore" database
         console.log("Connected to MongoDB");
     }
 );
 
-// Parameter Middleware for collection name
+// Parameter Middleware: Adds the specified collection to the request object
 app.param('collectionName', (req, res, next, collectionName) => {
-    req.collection = db.collection(collectionName);
-    return next();
+    req.collection = db.collection(collectionName); // Attach the collection to the request
+    return next(); // Pass control to the next middleware
 });
 
-// Retrieve all objects from a collection
+// Retrieve all objects from a specified collection
 app.get('/collection/:collectionName', (req, res, next) => {
     req.collection.find({}).toArray((e, results) => {
-        if (e) return next(e);
-        res.send(results);
+        if (e) return next(e); // Handle errors
+        res.send(results); // Send all documents in the collection as a response
     });
 });
 
+// Root route: Provide instructions on how to use the API
 app.get('/', (req, res) => {
     res.send('Select a collection, e.g., /collection/lessons');
 });
 
-
-
-// Add a document to a collection
+// Add a new document to a specified collection
 app.post('/collection/:collectionName', (req, res, next) => {
     req.collection.insertOne(req.body, (e, result) => {
-        if (e) return next(e);
-        res.send(result.ops[0]);
+        if (e) return next(e); // Handle errors
+        res.send(result.ops[0]); // Return the newly added document
     });
 });
 
-// return with object id
-// const ObjectID = require('mongodb').ObjectID;
+// Retrieve a document by its ObjectID
 app.get('/collection/:collectionName/:id', (req, res, next) => {
     req.collection.findOne({ _id: ObjectID(req.params.id) }, (e, result) => {
-        if (e) return next(e)
-        res.send(result)
-    })
-})
+        if (e) return next(e); // Handle errors
+        res.send(result); // Return the found document
+    });
+});
 
-// Update a document by ID
+// Update a document by its ObjectID
 app.put('/collection/:collectionName/:id', (req, res, next) => {
     req.collection.updateOne(
-        { _id: new ObjectID(req.params.id) },
-        { $set: req.body },
-        { safe: true, multi: false },
+        { _id: new ObjectID(req.params.id) }, // Match the document by ID
+        { $set: req.body }, // Update with new data
+        { safe: true, multi: false }, // Options: ensure safety, update one document
         (e, result) => {
-            if (e) return next(e);
-            res.send(result.matchedCount === 1 ? { msg: 'success' } : { msg: 'error' });
+            if (e) return next(e); // Handle errors
+            res.send(result.matchedCount === 1 ? { msg: 'success' } : { msg: 'error' }); // Send success or error message
         }
     );
 });
 
-
+// Search for documents in a collection based on a search term
 app.get('/search/:collectionName', (req, res, next) => {
     const searchTerm = req.query.q || ""; // Get the search term from the query string
     const searchRegex = new RegExp(searchTerm, "i"); // Case-insensitive regex for substring matching
 
-    // Build the search query
     const query = {
-        $or: [
+        $or: [ // Match any of the fields
             { title: searchRegex },
             { location: searchRegex },
-            { price: { $regex: searchRegex } }, // Match price as a string using regex
-            { availableSeats: { $regex: searchRegex } }, // Match spaces/availability as a string using regex
+            { price: { $regex: searchRegex } }, // Match price as a string
+            { availableSeats: { $regex: searchRegex } }, // Match availability as a string
             { description: searchRegex },
-
         ],
     };
 
-    // Execute the search on the collection
     req.collection.find(query).toArray((err, results) => {
         if (err) {
             console.error("Error executing search query:", err);
@@ -151,7 +135,8 @@ app.get('/search/:collectionName', (req, res, next) => {
     });
 });
 
+// Start the server on the specified port
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-    console.log("Express.js server running at localhost:${port}");
+    console.log(`Express.js server running at localhost:${port}`);
 });
