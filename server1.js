@@ -4,6 +4,24 @@ const path = require("path");
 const { MongoClient, ObjectID } = require('mongodb');
 
 
+// Logger Middleware
+function logger(req, res, next) {
+    const method = req.method;
+    const url = req.url;
+    const timestamp = new Date();
+
+    console.log(`[${timestamp}] ${method} request to ${url}`);
+
+    res.on('finish', () => {
+        console.log(`[${timestamp}] Response status: ${res.statusCode}`);
+    });
+
+    next();
+}
+
+// Use the logger middleware
+app.use(logger);
+
 // Serve static assets
 // app.use('/assets', express.static(path.resolve(__dirname, "assets")));
 
