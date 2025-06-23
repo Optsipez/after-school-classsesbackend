@@ -79,6 +79,6 @@ You can test endpoints using tools like:
 
 🔗 [LinkedIn](www.linkedin.com/in/visheshh-mundra-231518254)
 
-📧 [vishesh@email.com](mailto:vishesh@email.com)
+📧 [visheshmundra@gmail.com](mailto:visheshmundra@gmail.com)
 
 ---
